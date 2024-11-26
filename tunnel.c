@@ -59,20 +59,60 @@ void tunnels_destroy(struct Tunnel **tunnels) {
  *  @param  vehicle Pointer to the vehicle attempting to enter.
  *  @return True if the vehicle enters the tunnel successfully, false otherwise.
  */
+/**
+ * @brief Tries to admit a vehicle into the tunnel.
+ * 
+ * @param tunnel Pointer to the tunnel.
+ * @param vehicle Pointer to the vehicle attempting to enter.
+ * @return True if the vehicle enters the tunnel successfully, false otherwise.
+ */
 static bool try_to_enter_inner(struct Tunnel *tunnel, struct Vehicle *vehicle) {
-    // TODO
+    // Calculate the current tunnel occupancy in terms of capacity units
+    int current_occupancy = tunnel->num_vehicles * 
+                            ((tunnel->vehicle_type == SLED) ? 3 : 1);
+
+    // Check if the tunnel is empty
+    if (tunnel->num_vehicles == 0) {
+        // Set the tunnel's type and direction to match the vehicle
+        tunnel->vehicle_type = vehicle->vehicle_type;
+        tunnel->direction = vehicle->direction;
+        tunnel->num_vehicles++;
+        return true;
+    }
+
+    // Check compatibility of type and direction
+    if (tunnel->vehicle_type == vehicle->vehicle_type && tunnel->direction == vehicle->direction) {
+        // Check if adding this vehicle would exceed capacity
+        int vehicle_space = (vehicle->vehicle_type == SLED) ? 3 : 1;
+        if (current_occupancy + vehicle_space <= tunnel_capacities[CAR] * 3) {
+            tunnel->num_vehicles++;
+            return true;
+        }
+    }
+
+    // If the vehicle cannot enter the tunnel
+    return false;
 }
 
-/** @brief  Removes a vehicle from the given tunnel.
- *
- *  Called by `tunnel_exit`.
- *
- *  @param  tunnel  Pointer to the tunnel.
- *  @return Void.
+
+/**
+ * @brief Removes a vehicle from the tunnel.
+ * 
+ * @param tunnel Pointer to the tunnel.
+ * @return Void.
  */
 static void exit_tunnel_inner(struct Tunnel *tunnel) {
-    // TODO
+    // Decrement the number of vehicles
+    tunnel->num_vehicles--;
+
+    // If the tunnel is now empty, reset its type and direction
+    if (tunnel->num_vehicles == 0) {
+        tunnel->vehicle_type = -1; // Invalid type
+        tunnel->direction = -1;   // Invalid direction
+    }
 }
+
+
 
 /** @brief  Enters the given vehicle into the given tunnel if possible, based on the vehicles
  *          currently in the tunnel.
